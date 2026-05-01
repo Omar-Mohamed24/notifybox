@@ -170,7 +170,7 @@ async function handleLogin() {
 		const topic = normalizeUsername(rawUsername);
 
 		console.log('[app.js:handleLogin] Calling /subscribe', { topic });
-		await fetch('notifybox-production-dd28.up.railway.app/subscribe', {
+		await fetch('https://notifybox-production-dd28.up.railway.app/subscribe', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ token: currentToken, topic }),
@@ -291,7 +291,7 @@ async function handleLogout() {
 
 	if (token && topic) {
 		console.log('[app.js:handleLogout] Calling /unsubscribe', { topic });
-		await fetch('notifybox-production-dd28.up.railway.app/unsubscribe', {
+		await fetch('https://notifybox-production-dd28.up.railway.app/unsubscribe', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ token, topic }),
