@@ -92,7 +92,7 @@
 			</div>
 
 			<nav class="navbar">
-				<a class="nav-tab" href="inbox.html">📥 Inbox</a>
+				<a class="nav-tab" href="/index.html">📥 Inbox</a>
 				<span class="nav-tab active">📋 History</span>
 			</nav>
 
@@ -171,7 +171,6 @@
 							normalizeTs(a.receivedAt ?? a.timestamp ?? a.createdAt)
 					);
 
-					// Show topic tags
 					const topics = [...new Set(allNotifications.map((n) => n.topic))];
 					document.getElementById('topic-tags').innerHTML = topics
 						.map((t) => `<span class="topic-tag">${escapeHtml(t)}</span>`)
@@ -228,7 +227,6 @@
 					.join('');
 			}
 
-			// Auto-load on page open
 			loadNotifications();
 		</script>
 	</body>
