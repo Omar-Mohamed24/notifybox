@@ -1,0 +1,14 @@
+{
+  "name": "fcm-notification-inbox",
+  "version": "1.0.0",
+  "description": "FCM Notification Inbox - runs fully locally",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "firebase-admin": "^12.0.0",
+    "nodemon": "^3.1.14"
+  }
+}

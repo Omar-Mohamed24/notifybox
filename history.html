@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Notify — History</title>
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link
+			href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300&family=IBM+Plex+Sans:wght@300;400;500&display=swap"
+			rel="stylesheet" />
+
+		<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+		<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+
+		<link rel="stylesheet" href="style.css" />
+
+		<style>
+			.app { max-width: 560px; }
+			.notif-list { max-height: 520px; }
+
+			.history-top {
+				display: flex;
+				align-items: flex-start;
+				justify-content: space-between;
+				gap: 1rem;
+				margin-bottom: 1.5rem;
+				padding-bottom: 1.25rem;
+				border-bottom: 1px solid var(--border);
+			}
+			.history-meta .inbox-greeting {
+				font-size: 0.65rem;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
+				color: var(--text-muted);
+				margin-bottom: 0.25rem;
+			}
+			.history-meta .inbox-username {
+				font-size: 1rem;
+				font-weight: 500;
+				color: var(--text);
+			}
+			.topic-tag {
+				display: inline-block;
+				background: var(--surface-2);
+				border: 1px solid var(--border);
+				border-radius: 4px;
+				padding: 0.1rem 0.45rem;
+				font-size: 0.6rem;
+				color: var(--accent);
+				letter-spacing: 0.06em;
+				margin-right: 0.3rem;
+				margin-top: 0.45rem;
+			}
+			.filter-bar {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				margin-bottom: 1rem;
+			}
+			.filter-bar input[type='text'] {
+				margin-bottom: 0;
+				font-size: 0.78rem;
+				padding: 0.55rem 0.85rem;
+				flex: 1;
+			}
+			.refresh-btn {
+				padding: 0.55rem 0.9rem;
+				background: transparent;
+				color: var(--text-dim);
+				border: 1px solid var(--border);
+				font-family: var(--mono);
+				font-size: 0.7rem;
+				letter-spacing: 0.08em;
+				cursor: pointer;
+				border-radius: var(--radius-sm);
+				transition: all 0.15s ease;
+				white-space: nowrap;
+				text-transform: uppercase;
+			}
+			.refresh-btn:hover {
+				border-color: var(--accent);
+				color: var(--accent);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="app">
+			<div class="brand">
+				<div class="brand-icon">📬</div>
+				<span class="brand-name">Notify</span>
+			</div>
+
+			<nav class="navbar">
+				<a class="nav-tab" href="inbox.html">📥 Inbox</a>
+				<span class="nav-tab active">📋 History</span>
+			</nav>
+
+			<div class="history-top">
+				<div class="history-meta">
+					<div class="inbox-greeting">All users</div>
+					<div class="inbox-username">Notifications History</div>
+					<div id="topic-tags"></div>
+				</div>
+			</div>
+
+			<div class="inbox-section-head">
+				<span class="inbox-section-title">All Notifications</span>
+				<span class="inbox-count" id="history-count">—</span>
+			</div>
+
+			<div class="filter-bar">
+				<input
+					type="text"
+					id="search-input"
+					placeholder="Search by title, body or user..."
+					oninput="renderHistory()" />
+				<button class="refresh-btn" onclick="loadNotifications()">↻ Refresh</button>
+			</div>
+
+			<div class="notif-list" id="history-list">
+				<div class="loading-state">
+					Fetching history<span class="ellipsis"></span>
+				</div>
+			</div>
+		</div>
+
+		<script src="config.js"></script>
+		<script>
+			firebase.initializeApp(firebaseConfig);
+			const db = firebase.database();
+
+			let allNotifications = [];
+
+			function escapeHtml(str) {
+				return String(str || '')
+					.replace(/&/g, '&amp;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;');
+			}
+
+			function normalizeTs(value) {
+				const n = Number(value);
+				if (!Number.isFinite(n) || n <= 0) return Math.floor(Date.now() / 1000);
+				return n > 1e11 ? Math.floor(n / 1000) : Math.floor(n);
+			}
+
+			function formatTimestamp(raw) {
+				return new Date(normalizeTs(raw) * 1000).toLocaleString();
+			}
+
+			function loadNotifications() {
+				const listEl = document.getElementById('history-list');
+				listEl.innerHTML = '<div class="loading-state">Fetching history<span class="ellipsis"></span></div>';
+
+				db.ref('notifications').once('value', (snapshot) => {
+					const data = snapshot.val();
+					allNotifications = [];
+
+					if (data) {
+						for (const topic in data) {
+							Object.values(data[topic]).forEach((n) =>
+								allNotifications.push({ ...n, topic })
+							);
+						}
+					}
+
+					allNotifications.sort(
+						(a, b) =>
+							normalizeTs(b.receivedAt ?? b.timestamp ?? b.createdAt) -
+							normalizeTs(a.receivedAt ?? a.timestamp ?? a.createdAt)
+					);
+
+					// Show topic tags
+					const topics = [...new Set(allNotifications.map((n) => n.topic))];
+					document.getElementById('topic-tags').innerHTML = topics
+						.map((t) => `<span class="topic-tag">${escapeHtml(t)}</span>`)
+						.join('');
+
+					renderHistory();
+				});
+			}
+
+			function renderHistory() {
+				const listEl = document.getElementById('history-list');
+				const countEl = document.getElementById('history-count');
+				const query = document.getElementById('search-input').value.toLowerCase().trim();
+
+				const filtered = query
+					? allNotifications.filter(
+							(n) =>
+								(n.title || '').toLowerCase().includes(query) ||
+								(n.body || '').toLowerCase().includes(query) ||
+								(n.topic || '').toLowerCase().includes(query)
+					  )
+					: allNotifications;
+
+				countEl.textContent =
+					filtered.length === allNotifications.length
+						? `${allNotifications.length} notifications`
+						: `${filtered.length} / ${allNotifications.length}`;
+
+				if (filtered.length === 0) {
+					listEl.innerHTML = `
+						<div class="empty-state">
+							<span class="icon">🔍</span>
+							<p>${
+								allNotifications.length === 0
+									? 'No notifications in the database yet.'
+									: 'No results match your search.'
+							}</p>
+						</div>`;
+					return;
+				}
+
+				listEl.innerHTML = filtered
+					.map(
+						(n, i) => `
+					<div class="notif-card ${i === 0 && !query ? 'newest' : ''}">
+						<div class="notif-row">
+							<span class="notif-title">${escapeHtml(n.title || 'No title')}</span>
+							<span class="notif-time">${formatTimestamp(n.receivedAt ?? n.timestamp ?? n.createdAt)}</span>
+						</div>
+						<div class="notif-body">${escapeHtml(n.body || '')}</div>
+						<span class="topic-tag">${escapeHtml(n.topic)}</span>
+					</div>`
+					)
+					.join('');
+			}
+
+			// Auto-load on page open
+			loadNotifications();
+		</script>
+	</body>
+</html>
