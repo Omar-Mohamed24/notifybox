@@ -85,11 +85,11 @@ app.post('/send', async (req, res) => {
 			webpush: { headers: { Urgency: 'high' } },
 		});
 
-		await admin.database().ref(`notifications/${topic}`).push({
-			title,
-			body,
-			receivedAt: Date.now(),
-		});
+		// await admin.database().ref(`notifications/${topic}`).push({
+		// 	title,
+		// 	body,
+		// 	receivedAt: Date.now(),
+		// });
 
 		console.log(`[send] Notification sent & stored for topic: ${topic}`);
 		res.json({ success: true });
