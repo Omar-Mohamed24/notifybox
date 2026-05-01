@@ -4,12 +4,15 @@
   "description": "FCM Notification Inbox - runs fully locally",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
-    "firebase-admin": "^12.0.0",
+    "firebase-admin": "^12.0.0"
+  },
+  "devDependencies": {
     "nodemon": "^3.1.14"
   }
 }
