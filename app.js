@@ -170,11 +170,14 @@ async function handleLogin() {
 		const topic = normalizeUsername(rawUsername);
 
 		console.log('[app.js:handleLogin] Calling /subscribe', { topic });
-		await fetch('https://notifybox-production-dd28.up.railway.app/subscribe', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ token: currentToken, topic }),
-		});
+		await fetch(
+			'https://notifybox-production-dd28.up.railway.app/subscribe',
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ token: currentToken, topic }),
+			},
+		);
 
 		console.log('[app.js:handleLogin] Writing user record in Realtime DB');
 		await db.ref('users/' + rawUsername.toLowerCase()).set({
@@ -227,10 +230,13 @@ messaging.onMessage((payload) => {
 
 	const title =
 		payload.data?.title || payload.notification?.title || 'No title';
-
 	const body = payload.data?.body || payload.notification?.body || '';
 
 	if (title) {
+		if (Notification.permission === 'granted') {
+			new Notification(title, { body });
+		}
+
 		console.log('[app.js] Notification stored from 2 message');
 		storeNotification(currentTopic, title, body);
 	}
@@ -291,11 +297,14 @@ async function handleLogout() {
 
 	if (token && topic) {
 		console.log('[app.js:handleLogout] Calling /unsubscribe', { topic });
-		await fetch('https://notifybox-production-dd28.up.railway.app/unsubscribe', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ token, topic }),
-		});
+		await fetch(
+			'https://notifybox-production-dd28.up.railway.app/unsubscribe',
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ token, topic }),
+			},
+		);
 	}
 
 	localStorage.clear();

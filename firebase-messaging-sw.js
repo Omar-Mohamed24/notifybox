@@ -17,19 +17,17 @@ messaging.onBackgroundMessage((payload) => {
 	const title = payload?.data?.title || payload?.notification?.title || '';
 	const body = payload?.data?.body || payload?.notification?.body || '';
 
-	self.clients
+	// MUST return the promise — Firebase does event.waitUntil(yourHandler()).
+	// Without the return, the SW terminates immediately and showNotification()
+	// / postMessage() never run.
+	return self.clients
 		.matchAll({ type: 'window', includeUncontrolled: true })
 		.then((windowClients) => {
-			const isForeground = windowClients.some((c) => c.focused);
+			windowClients.forEach((client) => {
+				client.postMessage({ type: 'bg-notification', title, body });
+			});
 
 			if (title) {
-				windowClients.forEach((client) => {
-					client.postMessage({
-						type: 'bg-notification',
-						title,
-						body,
-					});
-				});
 				return self.registration.showNotification(title, {
 					body,
 					data: payload.data,

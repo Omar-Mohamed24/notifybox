@@ -1,7 +1,6 @@
 const express = require('express');
 const admin = require('firebase-admin');
 const path = require('path');
-// const serviceAccount = require('./serviceAccountKey.json');
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
@@ -22,9 +21,7 @@ app.post('/subscribe', async (req, res) => {
 	}
 
 	try {
-		console.log('[server.js:/subscribe] Subscribing token to topic', {
-			topic,
-		});
+		console.log('[server.js:/subscribe] Subscribing token to topic', { topic });
 		await admin.messaging().subscribeToTopic(token, topic);
 		res.json({ success: true });
 	} catch (err) {
@@ -38,16 +35,11 @@ app.post('/unsubscribe', async (req, res) => {
 	const { token, topic } = req.body;
 
 	try {
-		console.log('[server.js:/unsubscribe] Unsubscribing token from topic', {
-			topic,
-		});
+		console.log('[server.js:/unsubscribe] Unsubscribing token from topic', { topic });
 		await admin.messaging().unsubscribeFromTopic(token, topic);
 		res.json({ success: true });
 	} catch (err) {
-		console.log(
-			'[server.js:/unsubscribe] unsubscribeFromTopic failed',
-			err,
-		);
+		console.log('[server.js:/unsubscribe] unsubscribeFromTopic failed', err);
 		res.json({ success: true });
 	}
 });
@@ -55,17 +47,12 @@ app.post('/unsubscribe', async (req, res) => {
 app.post('/send', async (req, res) => {
 	const { topic, title, body } = req.body;
 	try {
+		// Data-only — no `notification` field.
+		// Including `notification` causes FCM to auto-display in background AND
+		// call onBackgroundMessage, producing double notifications or suppression.
 		await admin.messaging().send({
 			topic,
-			topic,
-			notification: {
-				title,
-				body,
-			},
-			data: {
-				title,
-				body,
-			},
+			data: { title, body },
 		});
 
 		await admin.database().ref(`notifications/${topic}`).push({
@@ -82,7 +69,8 @@ app.post('/send', async (req, res) => {
 	}
 });
 
-const PORT = 3000;
+// process.env.PORT is injected by Railway — hardcoding 3000 breaks the binding
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
 	console.log(`Server running at http://localhost:${PORT}`);
 });
