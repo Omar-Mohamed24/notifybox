@@ -22,7 +22,7 @@ messaging.onBackgroundMessage((payload) => {
 		.then((windowClients) => {
 			const isForeground = windowClients.some((c) => c.focused);
 
-			if (!isForeground && title) {
+			if (title) {
 				windowClients.forEach((client) => {
 					client.postMessage({
 						type: 'bg-notification',
