@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const admin = require('firebase-admin');
 const path = require('path');
@@ -47,9 +48,6 @@ app.post('/unsubscribe', async (req, res) => {
 app.post('/send', async (req, res) => {
 	const { topic, title, body } = req.body;
 	try {
-		// Data-only — no `notification` field.
-		// Including `notification` causes FCM to auto-display in background AND
-		// call onBackgroundMessage, producing double notifications or suppression.
 		await admin.messaging().send({
 			topic,
 			data: { title, body },
@@ -69,7 +67,6 @@ app.post('/send', async (req, res) => {
 	}
 });
 
-// process.env.PORT is injected by Railway — hardcoding 3000 breaks the binding
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
 	console.log(`Server running at http://localhost:${PORT}`);
