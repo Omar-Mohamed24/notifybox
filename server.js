@@ -55,13 +55,19 @@ app.post('/unsubscribe', async (req, res) => {
 app.post('/send', async (req, res) => {
 	const { topic, title, body } = req.body;
 	try {
-		// 1. Send FCM notification
 		await admin.messaging().send({
 			topic,
-			data: { title, body },
+			topic,
+			notification: {
+				title,
+				body,
+			},
+			data: {
+				title,
+				body,
+			},
 		});
 
-		// 2. Save to Realtime Database so history page always has it
 		await admin.database().ref(`notifications/${topic}`).push({
 			title,
 			body,
