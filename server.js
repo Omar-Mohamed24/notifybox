@@ -1,17 +1,41 @@
 require('dotenv').config();
+
+process.on('uncaughtException', (err) => {
+	console.error('[FATAL] uncaughtException:', err.message, err.stack);
+	process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+	console.error('[FATAL] unhandledRejection:', reason);
+	process.exit(1);
+});
+
 const express = require('express');
 const admin = require('firebase-admin');
 const path = require('path');
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+console.log('[startup] FIREBASE_SERVICE_ACCOUNT present:', !!process.env.FIREBASE_SERVICE_ACCOUNT);
+console.log('[startup] FIREBASE_SERVICE_ACCOUNT length:', (process.env.FIREBASE_SERVICE_ACCOUNT || '').length);
+
+let serviceAccount;
+try {
+	serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+	console.log('[startup] Service account parsed, project_id:', serviceAccount.project_id);
+} catch (err) {
+	console.error('[startup] Failed to parse FIREBASE_SERVICE_ACCOUNT:', err.message);
+	process.exit(1);
+}
 
 admin.initializeApp({
 	credential: admin.credential.cert(serviceAccount),
 	databaseURL: 'https://notifybox-c4f4c-default-rtdb.firebaseio.com',
 });
+console.log('[startup] Firebase Admin initialized');
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+
+app.get('/health', (req, res) => res.json({ ok: true }));
 
 app.post('/subscribe', async (req, res) => {
 	console.log('[server.js:/subscribe] Request received');
@@ -68,6 +92,6 @@ app.post('/send', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-	console.log(`Server running at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+	console.log(`[startup] Server listening on 0.0.0.0:${PORT}`);
 });
